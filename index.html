@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<!-- google fonts css -->
+	<link href="https://fonts.googleapis.com/css?family=Oswald|Pacifico" rel="stylesheet">
+	<!-- default css -->
+	<link rel="stylesheet" type="text/css" href="assetts/css/default.css">
+	<!-- scripts -->
+	<script type="text/javascript" src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+	<script type="text/javascript" src="assetts/scripts/global.js"></script>
+</head>
+<body>
+
+<div class="header">
+	<div class="container">
+		<h1>Night snack</h1>
+		<p>- Your snack mate at night -</p>
+	</div><!-- end container -->
+  <div class="closed">
+  </div><!-- end closed -->
+</div><!-- header -->
+<div id="map"></div><!-- end map -->
+<div class="footer">
+	<p>Made with <span class="heart">&#x2665;</span> from Stockholm</p>
+</div><!-- end footer -->
+
+<script type="text/javascript">
+
+	var d = new Date();
+	var h = d.getHours();
+
+	if (h == 00 || h == 01 || h == 02 || h == 03 || h == 04 || h == 17 || h == 18) {
+	//foursquare credentials
+  var client_id = "KKB5PHJLIJRKRK2PRIUPNHRJVSOCZMLNQYGXFYY1F3M514KK";
+  var client_secret = "TUSWWPODBP3T0T5R2WWGOCTHIGEXDYXINOR0WW01P4U3BO5Z";
+
+  //initialize Google Maps and get current position
+  var map, handleLocationError, infowindow;
+    function initMap() {
+
+        // Try HTML5 geolocation.
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(function(position) {
+            var pos = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+        };
+
+        var uri = "https://api.foursquare.com/v2/venues/explore?offset=0&limit=50&section=food&ll=" + position.coords.latitude + ", " + position.coords.longitude + "&radius=500&client_id=" + client_id + "&client_secret=" + client_secret +"&v=20121215";
+
+        console.log(uri)
+
+        map = new google.maps.Map(document.getElementById('map'), {
+          center: pos,
+          zoom: 15,
+           styles: [
+            {elementType: 'geometry', stylers: [{color: '#242f3e'}]},
+            {elementType: 'labels.text.stroke', stylers: [{color: '#242f3e'}]},
+            {elementType: 'labels.text.fill', stylers: [{color: '#746855'}]},
+            {
+              featureType: 'administrative.locality',
+              elementType: 'labels.text.fill',
+              stylers: [{color: '#d59563'}]
+            },
+            {
+              featureType: 'poi',
+              elementType: 'labels.text.fill',
+              stylers: [{color: '#d59563'}]
+            },
+            {
+              featureType: 'poi.park',
+              elementType: 'geometry',
+              stylers: [{color: '#263c3f'}]
+            },
+            {
+              featureType: 'poi.park',
+              elementType: 'labels.text.fill',
+              stylers: [{color: '#6b9a76'}]
+            },
+            {
+              featureType: 'road',
+              elementType: 'geometry',
+              stylers: [{color: '#38414e'}]
+            },
+            {
+              featureType: 'road',
+              elementType: 'geometry.stroke',
+              stylers: [{color: '#212a37'}]
+            },
+            {
+              featureType: 'road',
+              elementType: 'labels.text.fill',
+              stylers: [{color: '#9ca5b3'}]
+            },
+            {
+              featureType: 'road.highway',
+              elementType: 'geometry',
+              stylers: [{color: '#746855'}]
+            },
+            {
+              featureType: 'road.highway',
+              elementType: 'geometry.stroke',
+              stylers: [{color: '#1f2835'}]
+            },
+            {
+              featureType: 'road.highway',
+              elementType: 'labels.text.fill',
+              stylers: [{color: '#f3d19c'}]
+            },
+            {
+              featureType: 'transit',
+              elementType: 'geometry',
+              stylers: [{color: '#2f3948'}]
+            },
+            {
+              featureType: 'transit.station',
+              elementType: 'labels.text.fill',
+              stylers: [{color: '#d59563'}]
+            },
+            {
+              featureType: 'water',
+              elementType: 'geometry',
+              stylers: [{color: '#17263c'}]
+            },
+            {
+              featureType: 'water',
+              elementType: 'labels.text.fill',
+              stylers: [{color: '#515c6d'}]
+            },
+            {
+              featureType: 'water',
+              elementType: 'labels.text.stroke',
+              stylers: [{color: '#17263c'}]
+            }
+          ]
+        });
+
+  var infowindow = new google.maps.InfoWindow();
+  var marker, i;
+
+  //get all the restaurants which are open
+  $.getJSON(uri, function(data) {
+    for(i = 0; i < 5; i++) {
+      var place = data.response.groups[0].items[i].venue.name;
+      var placeLat = data.response.groups[0].items[i].venue.location.lat;
+      var placeLng = data.response.groups[0].items[i].venue.location.lng;
+      var placeAddress = data.response.groups[0].items[i].venue.location.formattedAddress[0];
+      var placeGenre = data.response.groups[0].items[i].venue.categories[0].shortName;
+      var distance = data.response.groups[0].items[i].venue.location.distance;
+      var popular = data.response.groups[0].items[i].reasons.items[0].summary;
+      //var open = data.response.groups[0].items[i].venue.hours.richStatus.text;
+      var placePosition = {
+        lat: placeLat,
+        lng: placeLng
+      }
+
+      var marker = new google.maps.Marker({
+        position: placePosition,
+        map: map
+      });
+
+      setInfoWindow(place, placeGenre, placeAddress, distance, popular, map, marker, infowindow);
+
+    }//end loop
+  });//end json function
+
+  function setInfoWindow(place, placeGenre, placeAddress, distance, popular, map, marker, infoWindow) {
+    google.maps.event.addListener(marker, 'click', function() {
+    infowindow.setContent('<div><strong>' + place + ' | ' + placeGenre + '</strong><br>' + placeAddress + '<br><br><strong>' + distance + '</strong> meters to this place<br><br> ' + popular + '<br></div>');
+    infowindow.open(map, marker);
+  })
+  }
+
+    map.setCenter(pos);
+
+    }, function() {
+      handleLocationError(true, infowindow, map.getCenter());
+          });
+        } 
+        else {
+          // Browser doesn't support Geolocation
+          handleLocationError(false, infowindow, map.getCenter());
+        }
+      }	
+  }
+	else {
+    $("body").css("background-color","#242f3e");
+		$(".container p").css("display","none");
+    $(".container h1").css("display","none");
+    $("#map").css("display","none");
+    $(".closed").append("<h2>Woops, we're closed. Come back after midnight to get your snack!</h2>");
+	}
+
+	
+</script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCQH3M7XNkrA-ftu5YMLFYFl5yUAL51qQw&callback=initMap"></script>
+
+</body>
+</html>
